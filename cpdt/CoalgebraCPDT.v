@@ -110,3 +110,31 @@ Theorem ones_eq' : stream_eq ones ones'.
   constructor.
   assumption.
 Qed.
+
+Definition hd A (s:stream A) : A :=
+  match s with
+  | Cons x _ => x
+  end.
+
+Definition tl A (s:stream A) : stream A :=
+  match s with
+  | Cons _ s' => s'
+  end.
+
+Section stream_eq_coind.
+  Variable A : Type.
+  Variable R : stream A -> stream A -> Prop.
+
+  Hypothesis Cons_case_hd: forall s1 s2, R s1 s2 -> hd s1 = hd s2.
+  Hypothesis Cons_case_tl: forall s1 s2, R s1 s2 -> (R (tl s1) (tl s2)).
+
+  (** This proof is completely opaque to me.  Need to spend some time with it.
+    it feels more indictive than coindictive for some reason. *)
+  
+  Theorem stream_eq_coind : forall s1 s2, R s1 s2 -> stream_eq s1 s2.
+    cofix; destruct s1; destruct s2; intro.
+    generalize (Cons_case_hd H); intro Heq; simpl in Heq; rewrite Heq.
+    constructor.
+    apply stream_eq_coind.
+    apply (Cons_case_tl H).
+  Qed.
