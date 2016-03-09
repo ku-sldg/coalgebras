@@ -116,21 +116,44 @@ CoFixpoint map' (s : stream A) : stream B :=
   end.
  *)
 
+(** Coalgebraic definition of a stream of ones.  Note the self-referencing
+  name [ones].  This is what Haskell does as well. *)
+
 CoFixpoint ones: stream nat := Cons 1 ones.
+
+(** Can get also get a stream of ones by mapping successor over a stream of
+ zeros.  I thnk I did this elsewhere in this file using [approx]. *)
+
 Definition ones' := map S zeros.
+
+(** Prove that [ones] and [ones'] are the same.  Things get stuck reasonaby
+  quickly.*)
 
 Theorem ones_eq : ones = ones'.
 Proof.
   unfold ones.  unfold ones'.
 Abort.
 
+(** Define a [stream_eq] property rather than use [=].  Like earlier
+ inductive properties, this property is coinductive.  Same approach though,
+ just using [CoInductive] rather than [Inductive] in the definition. *)
+
 Section stream_eq.
   Variable A : Type.
 
+  (** Two streams are equal if they have the same head and tail.  This
+    definition is quite careful about how that is said.  [stream_eq] is
+    exactly what the coninductive definition should be.  Specifically,
+    if the property [stream_eq] holds for two streams, then it is true 
+    for the result of [Cons]ing the same value onto each. *)
+  
   CoInductive stream_eq: stream A -> stream A -> Prop :=
   | Stream_eq: forall h t1 t2,
       stream_eq t1 t2 -> stream_eq (Cons h t1) (Cons h t2).
 End stream_eq.
+
+(** [frob] is a goofy definition designed to make Coq to what it is supposed
+ to.  It's used in [frob_eq] below to provide a kind of stream unfolding. *)
 
 Definition frob A (s:stream A) : stream A :=
   match s with
@@ -141,6 +164,10 @@ Theorem frob_eq: forall A (s:stream A), s = frob s.
   intros. destruct s. reflexivity.
 Qed.
 
+(** Here [frob] and [frob_eq] are put to work.  The two [rewrite] instances
+  transform [ones] and [ones'] into their [Cons] equivalents.  Shouldn't
+  [unfold] to this?  Perhaps [ufold] is specific to definitions. *)
+
 Theorem ones_eq' : stream_eq ones ones'.
   cofix.
   rewrite (frob_eq ones).
@@ -149,6 +176,8 @@ Theorem ones_eq' : stream_eq ones ones'.
   constructor.
   assumption.
 Qed.
+
+(** Define [hd] and [tl] for stream types *)
 
 Definition hd A (s:stream A) : A :=
   match s with
